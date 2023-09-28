@@ -1,1 +1,14 @@
-version: '3.8'
+services:
+  app:
+    build: 
+      context: .
+      dockerfile: ./devops/Dockerfile
+    volumes:
+      - .:/cryptowallet
+    ports:
+      - 8000:8000
+    image: cryptowallet
+    container_name: cryptowallet_backend
+    command: /start.sh
+    env_file:
+      - ./envs/.env
