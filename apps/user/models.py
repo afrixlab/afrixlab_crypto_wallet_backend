@@ -56,21 +56,18 @@ class User(AbstractUser, BaseModelMixin):
         editable=False,
         default=uuid.uuid4
     )
-    
     first_name = models.CharField(
         _("First Name"), 
         null=True, 
         blank=True, 
         max_length=35
     )
-    
     last_name = models.CharField(
         _("Last Name"), 
         null=True, 
         blank=True, 
         max_length=55
     )
-    
     email = models.EmailField(
         _("Email"), 
         null=True, 
@@ -78,7 +75,6 @@ class User(AbstractUser, BaseModelMixin):
         max_length=225, 
         unique=True
     )
-    
     username = models.CharField(
         _("Username"), 
         null=True, 
@@ -86,7 +82,6 @@ class User(AbstractUser, BaseModelMixin):
         max_length=80, 
         unique=True
     )
-    
     account_type = models.CharField(
         _("Account Type"),
         choices=UserAccountType.choices(),
@@ -95,7 +90,7 @@ class User(AbstractUser, BaseModelMixin):
         blank=False,
         max_length=25,
     )
-    
+    #No default till our create wallet endpoint is done
     wallet_phrase = models.CharField(
         _("User Wallet Phrase"),
         null=True,
@@ -103,7 +98,6 @@ class User(AbstractUser, BaseModelMixin):
         max_length=255,
         unique=True,
     )
-    
     oauth_username = models.CharField(
         _("Authentication Username"),
         null=True,
@@ -111,19 +105,62 @@ class User(AbstractUser, BaseModelMixin):
         max_length=150,
         unique=True,
     )
-    
-    is_email_verified = models.BooleanField(
-        _("Email Verified?"), 
-        default=False, 
-        blank=True, 
-        null=False
+    #we later link to our file_manager mdoel
+    profile_picture = models.ManyToManyField(
+        verbose_name=_("Primary Profile Picture"),
+        related_name="primary_profile_pic_users",
+        blank=True,
     )
-    
+    old_passwords = models.BinaryField(
+        null=True,
+        blank=True, 
+        editable=False, 
+        verbose_name=_("Old Passwords")
+    )
+    is_password_set = models.BooleanField(
+        _("Password has been set"), 
+        null=False, 
+        blank=False, 
+        default=False
+    )
     can_get_notification = models.BooleanField(
         _("Can User get email notification?"),
         default=True,
         blank=False,
         null=False
     )
-   
-   
+    is_verified = models.BooleanField(
+        _("User account has been verified"), null=False, blank=False, default=False
+    )
+    google_auth_credentials = models.JSONField(
+        _("auth credential for admin"), blank=True, null=True
+    )
+    is_suspended = models.BooleanField(
+        _("User account has been suspended"), null=False, blank=False, default=False
+    )
+    suspend_expiry_date = models.DateTimeField(
+        _("User account suspend expiry date"), null=True, blank=True
+    )
+    suspend_duration_in_minutes = models.PositiveIntegerField(
+        _("Suspend duration in minutes"), null=False, blank=False, default=0
+    )
+    otp = models.CharField(
+        _("Otp"), default="0000", max_length=6, blank=True, null=True
+    )
+    pin = models.CharField(
+        _("Transaction pin"), null=False, blank=False, max_length=4, default="0000"
+    )
+    
+    USERNAME_FIELD = "email"
+
+    REQUIRED_FIELDS = []
+
+    objects = UserManager()
+    
+    class Meta:
+        verbose_name = _("User")
+        verbose_name_plural = _("Users")
+        
+    def set_google_auth_credentials(self, credentials: dict):
+        self.google_auth_credentials = credentials
+        self.save()
