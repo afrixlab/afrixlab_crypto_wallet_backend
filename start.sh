@@ -6,4 +6,4 @@ set -o nounset
 
 
 python manage.py migrate
-uvicorn config.asgi:application --host 0.0.0.0 --port 8000 --reload
+gunicorn config.asgi:application --workers 3 --worker-class uvicorn.workers.UvicornWorker --bind 0.0.0.0:8000 --timeout 0 --log-level debug --access-logfile -
