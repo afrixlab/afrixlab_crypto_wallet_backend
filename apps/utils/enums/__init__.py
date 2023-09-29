@@ -1,2 +1,2 @@
-from.base import BaseModelMixin
+from .base import BaseModelMixin, create_token
 from .user import UserAccountType

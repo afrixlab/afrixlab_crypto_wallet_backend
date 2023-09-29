@@ -4,7 +4,7 @@ from django.db import models
 from django.utils import timezone
 from enum import Enum
 
-
+from ..helpers.security import Token
 class ModelUtils:
     @staticmethod
     def efficient_queryset_iterator(queryset, chunk_size: int):
@@ -70,3 +70,8 @@ class BaseModelMixin(BaseModelBaseMixin, models.Model):
 
     def __str__(self):
         return f"< {type(self).__name__}({self.id}) >"
+
+
+def create_token():
+    return Token.create_random_hex_token(16)
+

@@ -1,5 +1,4 @@
-import uuid
-import secrets
+import uuid, secrets
 
 from django.db import models
 from django.contrib.auth.models import (
@@ -9,13 +8,15 @@ from django.contrib.auth.models import (
 from django.utils.translation import gettext_lazy as _
 
 from django.utils import timezone
+from django.conf import settings
 from rest_framework_simplejwt.tokens import RefreshToken
 
 
 from apps.user import tasks as celery_tasks
 from apps.utils.enums import (
     BaseModelMixin,
-    UserAccountType
+    UserAccountType,
+    create_token
 )
 
 
@@ -260,4 +261,71 @@ class User(AbstractUser, BaseModelMixin):
 
     
     def __str__(self):
-        return f"{self.id}"
+        return f"< {type(self).__name__}({self.id}) >"
+    
+
+class UserSession(BaseModelMixin):
+
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    refresh = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    access = models.CharField(max_length=255, unique=True, null=True, blank=True)
+    ip_address = models.CharField(max_length=255, null=True, blank=True)
+    user_agent = models.CharField(max_length=255, null=True, blank=True)
+    last_activity = models.DateTimeField(auto_now=True)
+    is_active = models.BooleanField(default=True)
+
+    class Meta:
+        verbose_name = "User Session"
+        verbose_name_plural = "User Sessions"
+
+    def __str__(self):
+        return f"{self.user} - {self.last_activity}"
+
+class EmailVerificationToken(BaseModelMixin):
+    owner = models.ForeignKey(
+        "user.User",
+        on_delete=models.CASCADE,
+        null=False,
+        related_name="email_reset_tokens",
+        verbose_name=_("Created By"),
+    )
+    token = models.CharField(
+        _("Token"),
+        null=False,
+        blank=True,
+        default=create_token,
+        editable=False,
+        max_length=100,
+    )
+
+    @property
+    def is_expired(self):
+        return timezone.now() > (
+            self.date_added
+            + timezone.timedelta(seconds=settings.PASSWORD_RESET_TOKEN_EXPIRATION_SECS)
+        )
+
+
+class PasswordResetToken(BaseModelMixin):
+    owner = models.ForeignKey(
+        "user.User",
+        on_delete=models.CASCADE,
+        null=False,
+        related_name="password_reset_tokens",
+        verbose_name=_("Created By"),
+    )
+    token = models.CharField(
+        _("Token"),
+        null=False,
+        blank=True,
+        default=create_token,
+        editable=False,
+        max_length=100,
+    )
+
+    @property
+    def is_expired(self):
+        return timezone.now() > (
+            self.date_added
+            + timezone.timedelta(seconds=settings.PASSWORD_RESET_TOKEN_EXPIRATION_SECS)
+        )
