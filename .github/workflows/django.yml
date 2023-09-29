@@ -27,4 +27,4 @@ jobs:
         pip install -r requirements/base.txt
     - name: Run Tests
       run: |
-        python manage.py migrate
+        python manage.py test
