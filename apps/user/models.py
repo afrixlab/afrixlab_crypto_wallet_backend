@@ -1,12 +1,18 @@
 import uuid
-from django.db import models
+import secrets
 
+from django.db import models
 from django.contrib.auth.models import (
     BaseUserManager,
     AbstractUser
 )
 from django.utils.translation import gettext_lazy as _
 
+from django.utils import timezone
+from rest_framework_simplejwt.tokens import RefreshToken
+
+
+from apps.user import tasks as celery_tasks
 from apps.utils.enums import (
     BaseModelMixin,
     UserAccountType
@@ -105,12 +111,14 @@ class User(AbstractUser, BaseModelMixin):
         max_length=150,
         unique=True,
     )
-    #we later link to our file_manager mdoel
+    """
+        we later link to our file_manager mdoel
     profile_picture = models.ManyToManyField(
         verbose_name=_("Primary Profile Picture"),
         related_name="primary_profile_pic_users",
         blank=True,
     )
+    """
     old_passwords = models.BinaryField(
         null=True,
         blank=True, 
@@ -164,3 +172,92 @@ class User(AbstractUser, BaseModelMixin):
     def set_google_auth_credentials(self, credentials: dict):
         self.google_auth_credentials = credentials
         self.save()
+        
+    @property
+    def is_admin(self):
+        return (
+            self.account_type and self.account_type != UserAccountType.USER.value
+        )
+
+    @property
+    def is_super_admin(self):
+        return self.account_type == UserAccountType.SUPER_ADMINISTRATOR.value
+
+    @property
+    def full_name(self):
+        full_name = f"{self.first_name} {self.last_name}"
+        return full_name.strip()
+
+    @property
+    def short_name(self):
+        return self.first_name or self.username or self.last_name or ""
+
+    @property
+    def short_name_with_username_as_priority(self):
+        return self.username or self.first_name or self.last_name or ""
+
+    @property
+    def is_admin_type(self):
+        return self.account_type in [
+            UserAccountType.ADMINISTRATOR.value,
+            UserAccountType.SUPER_ADMINISTRATOR.value,
+        ]
+
+
+    def verify_email(self):
+        self.is_verified = True
+        self.save()
+
+    def retrieve_auth_token(self):
+        data = {}
+        refresh = RefreshToken.for_user(self)
+        data["refresh"] = str(refresh)
+        data["access"] = str(refresh.access_token)
+        return data
+
+    def send_mail(self, subject, message, ignore_verification=True):
+        assert self.email, f"User {self.id} does not have a valid email address"
+        if not ignore_verification and not self.is_verified:
+            return
+        celery_tasks.send_email_to_user(
+            self.id, subject, message,
+        )
+
+    def notify_user(self, subject, message) -> bool:
+        try:
+            self.send_mail(subject, message)
+            return True
+        except Exception:
+            return False
+        
+        
+    def get_suitable_username_base(self):
+        email = self.email
+        oauth_username = self.oauth_username
+        first_name = self.first_name
+        last_name = self.last_name
+        return (
+            (email and email.split("@")[0])
+            or oauth_username
+            or first_name
+            or last_name
+            or ("afrixlab" + str(int(timezone.now().timestamp())).strip())
+        ).replace(" ", "")
+
+    @property
+    def generate_username(self,email=None) -> str:
+        if not email: 
+            username_base = self.get_suitable_username_base()
+        else:
+            username_base = email
+        username = username_base
+        while True:
+            if self.__class__.objects.filter(username=username).exists():
+                username = username_base + str(secrets.randbelow(1000))
+            else:
+                break
+        return username.lower()
+
+    
+    def __str__(self):
+        return f"{self.id}"

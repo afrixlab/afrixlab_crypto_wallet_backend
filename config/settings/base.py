@@ -18,7 +18,7 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOST",default=[
 
 # Application definition
 
-INSTALLED_APPS = [
+DJANGO_AND_THIRDPARTY_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -26,6 +26,12 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
 ]
+
+PROJECT_APPS = [
+    "apps.user.apps.UserConfig",
+]
+
+INSTALLED_APPS = DJANGO_AND_THIRDPARTY_APPS + PROJECT_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -113,3 +119,9 @@ STATIC_URL = "/static/"
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+#____________User Model___________
+AUTH_USER_MODEL = "user.User"
+AUTHENTICATION_BACKENDS = [
+    "django.contrib.auth.backends.ModelBackend",
+]

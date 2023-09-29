@@ -12,3 +12,5 @@ env = environ.Env()
 env_path = os.path.join(BASE_DIR, "envs", ".env")
 if os.path.exists(env_path):
     environ.Env.read_env(env_path, overwrite=True)
+    
+__all__ = ("celery_app",)
