@@ -59,7 +59,7 @@ WSGI_APPLICATION = 'config.wsgi.application'
 
 
 # Database
-if env.bool("USE_DJANGO_DEFAULT_DB",False):
+if env.bool("USE_DJANGO_DEFAULT_DB",True):
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.sqlite3',
