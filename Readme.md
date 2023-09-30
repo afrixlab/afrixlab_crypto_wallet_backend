@@ -8,8 +8,9 @@ You should have Knowledge on how Python, Django and Rest Framework works
 
 ## Tools Used or to be Implemented 
 - Django
-- Django Restframework
-- Djnago Channels
+- Django Rest framework
+- Django Channels
+- Django Jazzmin
 - Websockets
 - Google 0Auth2
 - Celery

@@ -105,21 +105,12 @@ class User(AbstractUser, BaseModelMixin):
         max_length=255,
         unique=True,
     )
-    oauth_username = models.CharField(
-        _("Authentication Username"),
+    
+    primary_picture = models.FileField(
+        upload_to="vault/",
         null=True,
-        blank=False,
-        max_length=150,
-        unique=True,
-    )
-    """
-        we later link to our file_manager mdoel
-    profile_picture = models.ManyToManyField(
-        verbose_name=_("Primary Profile Picture"),
-        related_name="primary_profile_pic_users",
         blank=True,
     )
-    """
     old_passwords = models.BinaryField(
         null=True,
         blank=True, 
@@ -132,17 +123,8 @@ class User(AbstractUser, BaseModelMixin):
         blank=False, 
         default=False
     )
-    can_get_notification = models.BooleanField(
-        _("Can User get email notification?"),
-        default=True,
-        blank=False,
-        null=False
-    )
     is_verified = models.BooleanField(
         _("User account has been verified"), null=False, blank=False, default=False
-    )
-    google_auth_credentials = models.JSONField(
-        _("auth credential for admin"), blank=True, null=True
     )
     is_suspended = models.BooleanField(
         _("User account has been suspended"), null=False, blank=False, default=False
@@ -155,9 +137,6 @@ class User(AbstractUser, BaseModelMixin):
     )
     otp = models.CharField(
         _("Otp"), default="0000", max_length=6, blank=True, null=True
-    )
-    pin = models.CharField(
-        _("Transaction pin"), null=False, blank=False, max_length=4, default="0000"
     )
     
     USERNAME_FIELD = "email"
@@ -242,7 +221,7 @@ class User(AbstractUser, BaseModelMixin):
             or oauth_username
             or first_name
             or last_name
-            or ("afrixlab" + str(int(timezone.now().timestamp())).strip())
+            or ("vault" + str(int(timezone.now().timestamp())).strip())
         ).replace(" ", "")
 
     @property

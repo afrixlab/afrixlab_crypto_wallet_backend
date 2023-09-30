@@ -12,7 +12,25 @@ DEFAULT_FROM_EMAIL=EMAIL_HOST_USER
 #___________ API AND VERSIONING ____________
 API_VERSION = env.str("API_VERSION",default="1")
 
-#____RESET PASSWORD TOKEN EXPIRATION TIME_____
+#____ RESET PASSWORD TOKEN EXPIRATION TIME _____
 PASSWORD_RESET_TOKEN_EXPIRATION_SECS = env.int(
     "PASSWORD_RESET_TOKEN_EXPIRATION_SECS", default=(3600 * 6)
 )
+
+# ____________ EMAIL VERIFICATION ______________
+EMAIL_VERIFICATION_TOKEN_EXPIRATION_SECS = env.int(
+    "EMAIL_VERIFICATION_TOKEN_EXPIRATION_SECS", default=(3600 * 6)
+)
+# ____________________CLOUDINARY__________________________________
+
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": env.str("CLOUDINARY_CLOUD_NAME",default="****"),
+    "API_KEY": env.str("CLOUDINARY_API_KEY",default="****"),
+    "API_SECRET": env.str("CLOUDINARY_API_SECRET",default="****")
+}
+MEDIA_URL = '/media/'
+DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
+
+
+#______________  SITE ___________
+SITE_NAME = "Afrix Labs Vaults App"

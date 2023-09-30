@@ -1,9 +1,11 @@
 """
-Django settings for afrixlab crypto wallet project.
+Django settings for afrixlab Vaults crypto wallet project.
 """
 import os
 from pathlib import Path
 from config import env
+from django.utils.timezone import timedelta
+
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
 SECRET_KEY = env.str("DJANGO_SECRET_KEY",default="***")
@@ -18,7 +20,7 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOST",default=[
 
 # Application definition
 
-DJANGO_AND_THIRDPARTY_APPS = [
+INSTALLED_APPS = [
     'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -34,7 +36,7 @@ PROJECT_APPS = [
     "apps.user.apps.UserConfig",
 ]
 
-INSTALLED_APPS = DJANGO_AND_THIRDPARTY_APPS + PROJECT_APPS
+INSTALLED_APPS  += PROJECT_APPS
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
@@ -151,3 +153,32 @@ REST_FRAMEWORK = {
     "DEFAULT_SCHEMA_CLASS": "rest_framework.schemas.coreapi.AutoSchema",
     "EXCEPTION_HANDLER": "apps.utils.exceptions.exceptions.custom_exception_handler",
 }
+
+
+#_____________________ JWT ____________________
+SIMPLE_JWT = {
+    "ACCESS_TOKEN_LIFETIME": timedelta(hours=3),
+    "REFRESH_TOKEN_LIFETIME": timedelta(days=2),
+    "ROTATE_REFRESH_TOKENS": True,
+    "BLACKLIST_AFTER_ROTATION": True,
+    "UPDATE_LAST_LOGIN": True,
+    "ALGORITHM": "HS256",
+    "SIGNING_KEY": SECRET_KEY,
+    "VERIFYING_KEY": None,
+    "AUDIENCE": None,
+    "ISSUER": None,
+    "JWK_URL": None,
+    "LEEWAY": 0,
+    "AUTH_HEADER_TYPES": ("Bearer",),
+    "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
+    "USER_ID_FIELD": "id",
+    "USER_ID_CLAIM": "user_id",
+    "USER_AUTHENTICATION_RULE": "rest_framework_simplejwt.authentication.default_user_authentication_rule",
+    "AUTH_TOKEN_CLASSES": ("rest_framework_simplejwt.tokens.AccessToken",),
+    "TOKEN_TYPE_CLAIM": "token_type",
+    "JTI_CLAIM": "jti",
+    "SLIDING_TOKEN_REFRESH_EXP_CLAIM": "refresh_exp",
+    "SLIDING_TOKEN_LIFETIME": timedelta(minutes=5),
+    "SLIDING_TOKEN_REFRESH_LIFETIME": timedelta(days=1),
+}
+
