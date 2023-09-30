@@ -213,12 +213,10 @@ class User(AbstractUser, BaseModelMixin):
         
     def get_suitable_username_base(self):
         email = self.email
-        oauth_username = self.oauth_username
         first_name = self.first_name
         last_name = self.last_name
         return (
             (email and email.split("@")[0])
-            or oauth_username
             or first_name
             or last_name
             or ("vault" + str(int(timezone.now().timestamp())).strip())
