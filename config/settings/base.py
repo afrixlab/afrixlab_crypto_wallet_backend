@@ -21,15 +21,16 @@ ALLOWED_HOSTS = env.list("DJANGO_ALLOWED_HOST",default=[
 # Application definition
 
 INSTALLED_APPS = [
-    'jazzmin',
-    'django.contrib.admin',
-    'django.contrib.auth',
-    'django.contrib.contenttypes',
-    'django.contrib.sessions',
-    'django.contrib.messages',
-    'django.contrib.staticfiles',
+    "jazzmin",
+    "django.contrib.admin",
+    "django.contrib.auth",
+    "django.contrib.contenttypes",
+    "django.contrib.sessions",
+    "django.contrib.messages",
+    "django.contrib.staticfiles",
     "rest_framework",
     "rest_framework_simplejwt.token_blacklist",
+    "drf_yasg",
 ]
 
 PROJECT_APPS = [

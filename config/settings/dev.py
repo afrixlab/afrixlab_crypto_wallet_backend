@@ -34,3 +34,38 @@ DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
 
 #______________  SITE ___________
 SITE_NAME = "Afrix Labs Vaults App"
+
+
+# _______________________Swagger _________________________
+SWAGGER_SETTINGS = {
+    "SECURITY_DEFINITIONS": {
+        "Bearer": {"type": "apiKey", "name": "Authorization", "in": "header"}
+    }
+}
+
+#______________________REDIS____________________________
+REDIS_HOST = env.str("REDIS_HOST", default="localhost")
+REDIS_PORT = env.int("REDIS_PORT", default=6379)
+
+# ______________________ Cache _______________________________
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"redis://{REDIS_HOST}:{REDIS_PORT}"
+
+    }
+}
+CACHE_TTL = env.int("VIEW_CACHE_TTL_SECS", 60 * 15)
+
+
+
+# ___________________________________Celery_________________________________________
+CELERY_BROKER = env.str("CELERY_BROKER", default="***********")
+CELERY_BROKER_URL = CELERY_BROKER
+CELERY_RESULT_BACKEND = env.str("CELERY_BACKEND", default="*************")
+CELERY_TIMEZONE = env.str("CELERY_TIMEZONE", default="UTC")
+CELERY_ACKS_LATE = True
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_TASK_REJECT_ON_WORKER_LOST = True
+CELERYD_PREFETCH_MULTIPLIER = 1

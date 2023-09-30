@@ -48,14 +48,22 @@ class AuthViewSet(
     def get_required_fields(self):
         if self.action == "create_user_with_email_and_password":
             return ["email","password"]
-        elif self.action == "finalize_google_login":
-            return ["code"]
+        elif self.action == "initialize_verify_email":
+            return ["page_base_url"]
+        elif self.action == "change_password":
+            return ["old_password", "new_password"]
+        elif self.action == "initiate_reset_password_email":
+            return ["email"]
+        elif self.action == "finalize_reset_password_email":
+            return ["token", "password"]
         
         return []
     
     def get_permissions(self):
         if self.action in [
             "create_user_with_email_and_password",  
+            "initiate_reset_password_email",
+            "finalize_reset_password_email",
         ]:
             return [permissions.IsGuestUser()]
         elif self.action in [
@@ -248,7 +256,7 @@ class AuthViewSet(
 
         token = helpers.Token.create_random_hex_token(16)
         cache_instance = redis.RedisTools(
-            helpers.user.UserAuthHelpers.get_email_verification_token_cache_reference(token),
+            helpers.UserAuthHelpers.get_email_verification_token_cache_reference(token),
             ttl=settings.EMAIL_VERIFICATION_TOKEN_EXPIRATION_SECS,
         )
         cache_instance.cache_value = {"owner": instance.id}
@@ -265,7 +273,7 @@ class AuthViewSet(
     def finalize_verify_email(self, request, *args, **kwargs):
         token = request.data.get("token")
         cache_instance = redis.RedisTools(
-            helpers.user.UserAuthHelpers.get_email_verification_token_cache_reference(token),
+            helpers.UserAuthHelpers.get_email_verification_token_cache_reference(token),
             ttl=settings.EMAIL_VERIFICATION_TOKEN_EXPIRATION_SECS,
         )
         if not cache_instance.cache_value:
@@ -286,6 +294,61 @@ class AuthViewSet(
             data={"message": f"Email verified successfully"},
         )
         
+    @decorators.action(
+        detail=False, 
+        methods=["post"],
+        url_path="reset-account/"
+    )
+    def initiate_reset_password_email(self, request, *args, **kwargs):
+        email = request.data.get("email").lower()
+        instance = helpers.commons.Utils.get_object_or_raise_error(UserModel.objects, email=email)
+        token = helpers.Token.create_random_hex_token(16)
+        cache_instance = redis.RedisTools(
+            helpers.UserAuthHelpers.get_password_reset_token_cache_reference(token),
+            ttl=settings.PASSWORD_RESET_TOKEN_EXPIRATION_SECS,
+        )
+        cache_instance.cache_value = {"owner": instance.id}
+        message = MessageTemplates.password_reset_email(
+            token, request.data.get("page_base_url")
+        )
+        instance.send_mail(
+            subject="Password Reset",
+            message=message,
+        )
+        return response.Response(
+            status=status.HTTP_200_OK,
+            data={
+                "message": f"An password reset email has been successfully sent to {email}"
+            },
+        )
+
+    @decorators.action(
+        detail=False, 
+        methods=["post"],
+        url_path="reset-password"
+    )
+    def finalize_reset_password_email(self, request, *args, **kwargs):
+        token = request.data.get("token")
+        password = request.data.get("password")
+        cache_instance = redis.RedisTools(
+            helpers.UserAuthHelpers.get_password_reset_token_cache_reference(token),
+            ttl=settings.PASSWORD_RESET_TOKEN_EXPIRATION_SECS,
+        )
+        if not cache_instance.cache_value:
+            raise exceptions.CustomException(
+                message="You specified an invalid token",
+                errors=["expired token"],
+            )
+        instance: UserModel = UserModel.objects.get(
+            id=cache_instance.cache_value.get("owner")
+        )
+        instance.set_password(password)
+        instance.save()
+        cache_instance.cache_value = None
+        return response.Response(
+            status=status.HTTP_200_OK,
+            data={"message": f"Password changed successfully"},
+        )
 
 
 class AuthLoginView(TokenObtainPairView):
