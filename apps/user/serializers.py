@@ -1,5 +1,4 @@
 from django.contrib.auth import get_user_model
-from django.contrib.auth.models import Group
 from rest_framework import serializers
 
 
@@ -51,7 +50,6 @@ class UserSerializer:
                 "groups",
                 "user_permissions",
                 "old_passwords",
-                "google_auth_credentials",
             ]
 
             ref_name = "User - Retrieve"

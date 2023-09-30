@@ -354,7 +354,7 @@ class AuthViewSet(
 class AuthLoginView(TokenObtainPairView):
     @staticmethod
     def check_login_status(view_func):
-        def wrapper_func(self, request, *args, **kwargs):
+        def wrapper_func(request, *args, **kwargs):
             
             if "email" not in request.data:
                 raise exceptions.CustomException(
@@ -374,7 +374,7 @@ class AuthLoginView(TokenObtainPairView):
                     raise exceptions.CustomException(message="unable to blacklist token")
                 session.is_active = False
                 session.save()
-            return view_func(self, request, *args, **kwargs)
+            return view_func(request, *args, **kwargs)
         return wrapper_func
 
     @check_login_status
