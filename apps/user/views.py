@@ -378,7 +378,7 @@ class AuthLoginView(TokenObtainPairView):
         return wrapper_func
 
     @check_login_status
-    def post(self, request, *args, **kwargs):
+    def post(request, *args, **kwargs):
         if not request.data.get("email"):
             raise exceptions.CustomException(
                 message="Email is required",
