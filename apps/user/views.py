@@ -46,7 +46,6 @@ class AuthViewSet(
     
     def password_validator(func):
         def create_user_with_email_and_password(self,request, *args, **kwargs):
-        
             if "password" in request.data:
                 password = request.data['password']
                 if len(password) < 8:

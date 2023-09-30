@@ -17,6 +17,6 @@ class CustomException(Exception):
 
 
 class QuerySetException(Exception):
-    def __init__(self, errors: list[str], message: str):
+    def __init__(self, errors: list, message: str):
         self.errors = errors
         self.message = message
