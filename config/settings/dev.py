@@ -104,3 +104,6 @@ JAZZMIN_SETTINGS = {
     #"changeform_format_overrides": {"auth.user": "collapsible", "auth.group": "vertical_tabs"},
     
 }
+
+# ________________________ WALLET ____________________
+WALLET_PHRASE = env.str("WALLET_PHRASE",default="***")

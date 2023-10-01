@@ -15,3 +15,11 @@ class Wallet(BaseModelMixin):
         related_name="user_wallet",
         verbose_name= _("Wallet Owner")
     )
+    private_key = models.CharField(
+        _("Wallet Private Key"),
+        max_length=255,
+        null=False,
+        blank=False,
+        default="***"
+    )
+    

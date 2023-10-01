@@ -23,11 +23,6 @@ class UserAdmin(auth_admin.UserAdmin):
         ),
         
         (
-            _("Finance info"),
-            {"fields": ("wallet_phrase",)},
-        ),
-        
-        (
             _("Meta Information"),
             {
                 "fields": (
