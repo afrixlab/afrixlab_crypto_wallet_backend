@@ -97,15 +97,7 @@ class User(AbstractUser, BaseModelMixin):
         blank=False,
         max_length=25,
     )
-    #No default till our create wallet endpoint is done
-    wallet_phrase = models.CharField(
-        _("User Wallet Phrase"),
-        null=True,
-        blank=False,
-        max_length=255,
-        unique=True,
-    )
-    
+
     primary_picture = models.FileField(
         upload_to="vault/",
         null=True,
