@@ -147,10 +147,7 @@ class User(AbstractUser, BaseModelMixin):
         verbose_name = _("User")
         verbose_name_plural = _("Users")
         
-    def set_google_auth_credentials(self, credentials: dict):
-        self.google_auth_credentials = credentials
-        self.save()
-        
+    
     @property
     def is_admin(self):
         return (
@@ -202,8 +199,6 @@ class User(AbstractUser, BaseModelMixin):
             queue=CeleryQueue.Definitions.EMAIL_NOTIFICATION,
         )
 
-        
-    
 
     def notify_user(self, subject, message) -> bool:
         try:
