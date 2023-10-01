@@ -6,7 +6,7 @@ from django.utils.html import strip_tags
 
 class EmailClient:
     __slots__ = ["receiver_email", "receiver_name", "subject", "message"]
-    mail_template = "mail/message.html"
+    mail_template = "message.html"
     sender: str = settings.DEFAULT_FROM_EMAIL
 
     def __init__(
