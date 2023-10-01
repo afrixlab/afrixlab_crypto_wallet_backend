@@ -18,7 +18,7 @@ from apps.utils.enums import (
     UserAccountType,
     create_token
 )
-
+from config.celery.queue import CeleryQueue
 
 
 class UserManager(BaseUserManager):
@@ -199,9 +199,13 @@ class User(AbstractUser, BaseModelMixin):
         assert self.email, f"User {self.id} does not have a valid email address"
         if not ignore_verification and not self.is_verified:
             return
-        celery_tasks.send_email_to_user(
-            self.id, subject, message,
+        celery_tasks.send_email_to_user.apply_async(
+            (self.id, subject, message),
+            queue=CeleryQueue.Definitions.EMAIL_NOTIFICATION,
         )
+
+        
+    
 
     def notify_user(self, subject, message) -> bool:
         try:

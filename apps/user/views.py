@@ -352,7 +352,6 @@ class AuthViewSet(
 
 
 class AuthLoginView(TokenObtainPairView):
-    @staticmethod
     def check_login_status(view_func):
         def wrapper_func(self, request, *args, **kwargs):
             
