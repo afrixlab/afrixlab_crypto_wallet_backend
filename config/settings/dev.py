@@ -79,7 +79,7 @@ CELERYD_PREFETCH_MULTIPLIER = 1
 JAZZMIN_SETTINGS = {
     "site_title": "Vault's Admin",
     "site_header": "Vault Crypto Wallet",
-    "site_brand": "Vault's",
+    "site_brand": "Vault's Wallet",
     "welcome_sign": "Welcome to Vault's wallet",
     "copyright": "Afrix Lab Ltd",
     "user_avatar": None,
@@ -102,6 +102,5 @@ JAZZMIN_SETTINGS = {
     "changeform_format": "horizontal_tabs",
     # override change forms on a per modeladmin basis
     #"changeform_format_overrides": {"auth.user": "collapsible", "auth.group": "vertical_tabs"},
-    # Add a language dropdown into the admin
-    "language_chooser": True,
+    
 }

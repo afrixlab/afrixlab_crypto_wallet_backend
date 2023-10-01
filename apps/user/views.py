@@ -56,6 +56,8 @@ class AuthViewSet(
             return ["email"]
         elif self.action == "finalize_reset_password_email":
             return ["token", "password"]
+        elif self.action in ["logout","finalize_verify_email"]:
+            return ['token']
         
         return []
     
@@ -244,11 +246,16 @@ class AuthViewSet(
             data={"message": "Password changed successfully"},
         )
 
-    @decorators.action(detail=False, methods=["post"])
+    @decorators.action(
+        detail=False, 
+        methods=["post"],
+        url_name="Request Email Verification",
+        url_path="request_email_verification"
+    )
     def initialize_verify_email(self, request, *args, **kwargs):
         page_base_url = request.data.get("page_base_url")
         instance: models.User = request.user
-        if instance.is_email_verified:
+        if instance.is_verified:
             raise exceptions.CustomException(
                 message="The email address is already verified for the account",
                 errors=["verified email"],
@@ -260,7 +267,7 @@ class AuthViewSet(
             ttl=settings.EMAIL_VERIFICATION_TOKEN_EXPIRATION_SECS,
         )
         cache_instance.cache_value = {"owner": instance.id}
-        message = MessageTemplates.email_verification_email(token, page_base_url)
+        message = MessageTemplates.MessageTemplates.email_verification_email(token, page_base_url)
         instance.send_mail("Email Verification", message)
         return response.Response(
             status=status.HTTP_200_OK,
@@ -269,7 +276,12 @@ class AuthViewSet(
             },
         )
 
-    @decorators.action(detail=False, methods=["post"])
+    @decorators.action(
+        detail=False, 
+        methods=["post"],
+        url_name="Verify token for email",
+        url_path="verify_email"
+    )
     def finalize_verify_email(self, request, *args, **kwargs):
         token = request.data.get("token")
         cache_instance = redis.RedisTools(
@@ -285,9 +297,9 @@ class AuthViewSet(
             id=cache_instance.cache_value.get("owner")
         )
         instance.verify_email()
-        print(instance.is_email_verified)
+        print(instance.is_verified)
         cache_instance.cache_value = None
-        message = MessageTemplates.email_verification_success()
+        message = MessageTemplates.MessageTemplates.email_verification_success()
         instance.send_mail("Email Verification Success", message)
         return response.Response(
             status=status.HTTP_200_OK,
@@ -297,7 +309,7 @@ class AuthViewSet(
     @decorators.action(
         detail=False, 
         methods=["post"],
-        url_path="reset-account/"
+        url_path="reset-account"
     )
     def initiate_reset_password_email(self, request, *args, **kwargs):
         email = request.data.get("email").lower()
@@ -308,7 +320,7 @@ class AuthViewSet(
             ttl=settings.PASSWORD_RESET_TOKEN_EXPIRATION_SECS,
         )
         cache_instance.cache_value = {"owner": instance.id}
-        message = MessageTemplates.password_reset_email(
+        message = MessageTemplates.MessageTemplates.password_reset_email(
             token, request.data.get("page_base_url")
         )
         instance.send_mail(
@@ -318,7 +330,7 @@ class AuthViewSet(
         return response.Response(
             status=status.HTTP_200_OK,
             data={
-                "message": f"An password reset email has been successfully sent to {email}"
+                "message": f"Password reset email has been successfully sent to {email}"
             },
         )
 

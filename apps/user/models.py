@@ -135,9 +135,7 @@ class User(AbstractUser, BaseModelMixin):
     suspend_duration_in_minutes = models.PositiveIntegerField(
         _("Suspend duration in minutes"), null=False, blank=False, default=0
     )
-    otp = models.CharField(
-        _("Otp"), default="0000", max_length=6, blank=True, null=True
-    )
+
     
     USERNAME_FIELD = "email"
 
