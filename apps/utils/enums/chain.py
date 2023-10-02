@@ -10,3 +10,7 @@ class BlockchainConsensusType(BaseEnum):
     PROOF_OF_ELASPSED_TIME = "(PoET)"
     PRATICAL_BYZANTINE_FAULT_TOLERANCE = "(PBFT)"
     DIRECTED_ACYCLIC_GRAPH = "(DAG)"
+    
+class NodeType(BaseEnum):
+    MAINNET = "MAINNET"
+    TESTNET = "TESTNET" 

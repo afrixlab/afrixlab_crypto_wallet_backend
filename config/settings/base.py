@@ -38,6 +38,7 @@ INSTALLED_APPS = [
 
 PROJECT_APPS = [
     "apps.user.apps.UserConfig",
+    "apps.chain.apps.ChainConfig",
 ]
 
 INSTALLED_APPS  += PROJECT_APPS
@@ -85,11 +86,11 @@ if env.bool("USE_DJANGO_DEFAULT_DB",True):
 else:
     DATABASES = {
         "default": {
-            "ENGINE": env.str("DJANGO_POSTGRESQL_ENGINE", "***"),
-            "NAME": env.str("DJANGO_POSTGRESQL_NAME", "***"),
-            "USER": env.str("DJANGO_POSTGRESQL_USER", "***"),
-            "PASSWORD": env.str("DJANGO_POSTGRESQL_PASSWORD", "***"),
-            "HOST": env.str("DJANGO_POSTGRESQL_HOST","***"),
+            "ENGINE": env.str("DJANGO_POSTGRESQL_ENGINE", "django.db.backends.postgresql_psycopg2"),
+            "NAME": env.str("DJANGO_POSTGRESQL_NAME", "postgres"),
+            "USER": env.str("DJANGO_POSTGRESQL_USER", "postgres"),
+            "PASSWORD": env.str("DJANGO_POSTGRESQL_PASSWORD", "postgres"),
+            "HOST": env.str("DJANGO_POSTGRESQL_HOST","db"),
             "PORT": env.int("DJANGO_POSTGRESQL_PORT", 5432),
         },    
     }

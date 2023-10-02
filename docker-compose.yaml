@@ -10,5 +10,16 @@ services:
     image: cryptowallet
     container_name: cryptowallet_backend
     command: /start.sh
+    depends_on:
+      - db
     env_file:
       - ./envs/.env
+  db:
+    image: postgres
+    volumes:
+      - ./data/db:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_DB=postgres
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    container_name: postgres_db
