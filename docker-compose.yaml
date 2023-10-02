@@ -6,20 +6,47 @@ services:
     volumes:
       - .:/cryptowallet
     ports:
-      - 8000:8000
+      - 8008:8008
     image: cryptowallet
     container_name: cryptowallet_backend
     command: /start.sh
     depends_on:
       - db
+      - redis
     env_file:
       - ./envs/.env
   db:
     image: postgres
     volumes:
       - ./data/db:/var/lib/postgresql/data
+
     environment:
       - POSTGRES_DB=postgres
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
     container_name: postgres_db
+  redis:
+    image: 'redis'
+  celeryworker:
+    build:
+      context: .
+      dockerfile: ./devops/Dockerfile
+    image: cryptowallet
+    container_name: celeryworker
+    depends_on:
+      - redis
+      - db
+    command: /start-celeryworker.sh
+    env_file:
+      - ./envs/.env
+  celerybeat:
+    build:
+      context: .
+      dockerfile: ./devops/Dockerfile
+    image: cryptowallet
+    container_name: celerybeat
+    depends_on:
+      - celeryworker
+    command: /start-celerybeat.sh
+    env_file:
+      - ./envs/.env

@@ -13,4 +13,10 @@ class BlockchainConsensusType(BaseEnum):
     
 class NodeType(BaseEnum):
     MAINNET = "MAINNET"
-    TESTNET = "TESTNET" 
+    TESTNET = "TESTNET"
+    
+
+class CoinType(BaseEnum):
+    STABLE_COIN = "STABLE_COIN"
+    POPULAR_COIN = "POPULAR_COIN"
+    OTHER = "OTHER"

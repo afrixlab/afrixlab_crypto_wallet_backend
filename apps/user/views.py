@@ -4,7 +4,7 @@ from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
 from django.http import QueryDict
-
+from drf_yasg.utils import swagger_auto_schema
 from rest_framework import (
     viewsets,
     decorators,
@@ -40,7 +40,7 @@ UserModel = get_user_model()
 class AuthViewSet(
     CountListResponseMixin,
     CustomRequestDataValidationMixin,
-    viewsets.ViewSet
+    viewsets.ModelViewSet
 ):
     queryset = UserModel.objects
     serializer_class = serializers.UserSerializer
@@ -74,6 +74,26 @@ class AuthViewSet(
             return super().get_permissions() + [permissions.IsAccountType.AdminUser()]
         
         return super().get_permissions()
+    
+    @swagger_auto_schema(auto_schema=None)
+    def list(self, request, *args, **kwargs):
+        return super().list(request, *args, **kwargs)
+    
+    @swagger_auto_schema(auto_schema=None)
+    def create(self, request, *args, **kwargs):
+        return super().create(request, *args, **kwargs)
+    
+    @swagger_auto_schema(auto_schema=None)
+    def update(self, request, *args, **kwargs):
+        return super().update(request, *args, **kwargs)
+    
+    @swagger_auto_schema(auto_schema=None)
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
+    
+    @swagger_auto_schema(auto_schema=None)
+    def destroy(self, request, *args, **kwargs):
+        return super().destroy(request, *args, **kwargs)
     
     def password_validator(func):
         def create_user_with_email_and_password(self,request, *args, **kwargs):
@@ -113,7 +133,7 @@ class AuthViewSet(
         user.is_password_set = True
         user.username = user.generate_username
         user.save()
-        serializer = self.serializer_class.Retrieve(instance=user)
+        serializer = serializers.BaseUserSerializer(instance=user)
         response_data = {**serializer.data}
         return response.Response(
             status=status.HTTP_200_OK,

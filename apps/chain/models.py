@@ -123,6 +123,14 @@ class Coin(enums.BaseModelMixin):
         verbose_name= _("Contract address of coin")
     )
     
+    Coin_type = models.CharField(
+        _("Coin Type"),
+        choices=enums.CoinType.choices(),
+        default=enums.CoinType.STABLE_COIN.value,
+        null=False,
+        max_length=15
+    )
+    
     class Meta:
         verbose_name = 'Blockchain Coin'
         verbose_name_plural = 'Blockchain Coins'
