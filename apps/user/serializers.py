@@ -3,31 +3,20 @@ from rest_framework import serializers
 
 
 
-class BaseUserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = get_user_model()
-        fields = "__all__"
 
-        ref_name = "Base User"
-
-
-class UserSerializer(BaseUserSerializer):
+class UserSerializer:
     class Update(serializers.ModelSerializer):
-        username = serializers.CharField(
-            allow_blank=False,
-            allow_null=True,
-            max_length=150,
-        )
-        
         class Meta:
             model = get_user_model()
             fields = [
+                "username",
                 "first_name",
                 "last_name",
                 "email",
                 "username",
-                "is_supended",
-                "suspend_duration_in_minutes",
+                "is_suspended",
+                "is_verified",
+                "account_type",
             ]
 
             ref_name = "User - Update"
@@ -36,6 +25,7 @@ class UserSerializer(BaseUserSerializer):
         class Meta:
             model = get_user_model()
             exclude = [
+                "id",
                 "password",
                 "is_superuser",
                 "is_staff",

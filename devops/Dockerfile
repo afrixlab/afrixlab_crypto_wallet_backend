@@ -1,6 +1,6 @@
 FROM ubuntu:latest
 FROM python:3.10
-RUN apt-get -y update && apt-get install -y libmagic-dev
+RUN apt-get -y update && apt-get install -y libmagic-dev  redis-server
 
 ENV PYTHONDONTWRITEBYTECODE 1
 ENV PYTHONUNBUFFERED 1

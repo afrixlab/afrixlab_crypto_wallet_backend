@@ -43,10 +43,10 @@ UserModel = get_user_model()
 class AuthViewSet(
     CustomRequestDataValidationMixin,
     CountListResponseMixin,
-    viewsets.ModelViewSet
+    viewsets.ViewSet
 ):
     queryset = UserModel.objects
-    #serializer_class = serializers.UserSerializer
+    serializer_class = serializers.UserSerializer
     http_method_names = ["post","get"]
 
     def get_queryset(self):
@@ -102,7 +102,26 @@ class AuthViewSet(
         return create_user_with_email_and_password
     
     
-    
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["email","password"],
+            properties= {
+                'email': openapi.Schema(type=openapi.TYPE_STRING),
+                'password': openapi.Schema(type=openapi.TYPE_STRING),
+                "first_name": openapi.Schema(type=openapi.TYPE_STRING),
+                "last_name": openapi.Schema(type=openapi.TYPE_STRING),
+                "account_type": openapi.Schema(type=openapi.TYPE_STRING,enum=enums.UserAccountType.values()),
+                "primary_picture": openapi.Schema(type=openapi.TYPE_FILE)
+            }
+        ),
+        responses={
+            200: serializer_class.Retrieve(),
+            409: "Conflict: User exist",
+            400: "Bad Request. Invalid input data.",
+        }
+    )
+
     @decorators.action(
         detail=False,
         methods=['post'],
@@ -130,8 +149,26 @@ class AuthViewSet(
             data=response_data,
         )
     
-    @decorators.action(detail=False, methods=["post"])
+    
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["token"],
+            properties= {
+                'token': openapi.Schema(type=openapi.TYPE_STRING)
+            }
+        ),
+        responses={
+            204: "No Content",
+            404: "Token Error. Refresh token error",
+        }
+    )
+    @decorators.action(
+        detail=False, 
+        methods=["post"],
+    )
     def logout(self, request, *args, **kwargs):
+        
         try:
             UserSession.objects.get(refresh=request.data.get("token")).delete()
             refresh_token = request.data.get("token")
@@ -150,15 +187,40 @@ class AuthViewSet(
                 message=str(err),
                 errors=["refresh token error"],
             )
-            
+    
+    
+    
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["email"],
+            properties= {
+                'email': openapi.Schema(type=openapi.TYPE_STRING)
+            }
+        ),
+        responses={
+            200: "Account Suspended",
+            400: "Account already reported",
+            404: "User not found",
+            406: "Not Accpetable: it's an ADMINISTRATOR account"
+        }
+    )
     @decorators.action(
         detail=False,
         methods=['post'],
-        url_name="suspend_default_user",
-        url_path="user/suspend"
+        url_name="suspend_user",
     )
-    def suspend_user_account(self,request,*args, **kwargs):
+    
+    def suspend_user(self,request,*args, **kwargs):
+        """
+        The above function suspends a user account based on the provided email and returns a response
+        with the status and a message.
         
+        :param request: The `request` parameter represents the HTTP request object that contains
+        information about the incoming request, such as headers, body, and query parameters
+        :return: an HTTP response with a status code of 200 (OK) and a JSON object containing a
+        "message" key with the value "Account Suspended".
+        """
         email_username =  request.data.get("email")
         user = UserModel.objects.get(email=email_username)
         
@@ -169,7 +231,7 @@ class AuthViewSet(
             )
         if user.is_suspended:
             raise exceptions.CustomException(
-                status_code=status.HTTP_406_NOT_ACCEPTABLE,
+                status_code=status.HTTP_400_BAD_REQUEST,
                 message="User already suspended"
             )
         
@@ -187,6 +249,72 @@ class AuthViewSet(
             data={"message": "Account Suspended"},
         )
         
+        
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["email"],
+            properties= {
+                'email': openapi.Schema(type=openapi.TYPE_STRING)
+            }
+        ),
+        responses={
+            200: "Account Unbanned",
+            400: "Account not banned",
+            403: "User not found",
+        }
+    )
+    @decorators.action(
+        detail=False,
+        methods=['post'],
+        url_name="unban user",
+    )
+    
+    def unban_user(self,request,*args, **kwargs):
+        """
+        The `unban_user` function takes an email as input, retrieves the corresponding user from the
+        database, checks if the user is currently banned, and if so, updates the `is_suspended` field to
+        False to unban the user.
+        
+        :param request: The `request` parameter is an object that represents the HTTP request made by
+        the client. It contains information such as the request method, headers, body, and query
+        parameters. In this code snippet, the `request` object is used to retrieve the email of the user
+        to be unbanned
+        :return: a response with a status code of 200 (OK) and a JSON object containing a message
+        indicating that the account has been unbanned.
+        """
+        
+        email_username =  request.data.get("email")
+        user = UserModel.objects.get(email=email_username)
+        
+        if not user:
+            raise exceptions.CustomException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                message="User data does not exist"
+            )
+        if not user.is_suspended:
+            raise exceptions.CustomException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                message="User not banned"
+            )
+
+        user.is_suspended = True
+        user.save()
+        
+        return response.Response(
+            status=status.HTTP_200_OK,
+            data={"message": "Account Unbanned"},
+        )
+        
+        
+    @swagger_auto_schema(
+        methods=["get", "patch"],
+        query_serializer=serializer_class.Update,
+        responses={
+            200: serializer_class.Retrieve(),
+            400: "Bad Request. Invalid input data.",
+        }
+    )
     @decorators.action(
         detail=False,
         methods=["get", "patch"],
@@ -198,23 +326,6 @@ class AuthViewSet(
             serializer = self.serializer_class.Retrieve(instance=request.user)
             return response.Response(status=status.HTTP_200_OK, data=serializer.data)
         elif request.method == "PATCH":
-            unique_fields = ["email", "username","primary_picture"]
-            base_queryset = self.queryset.exclude(id=request.user.id)
-            for field in unique_fields:
-                if request.data.get(field):
-                    value = request.data.get(field)
-                    if field == "username":
-                        queryset = base_queryset.filter(username=value)
-                    elif field == "email":
-                        queryset = base_queryset.filter(email=value)
-                    else:
-                        queryset = base_queryset.filter(primary_picture=value)
-                    if queryset.exists():
-                        raise exceptions.CustomException(
-                            errors=[f"{field} in use"],
-                            message=f"The specified {field.replace('_', ' ')} is already in use by another user",
-                        )
-
             serializer = self.serializer_class.Update(
                 instance=request.user, data=request.data, partial=True
             )
@@ -223,19 +334,47 @@ class AuthViewSet(
             serializer = self.serializer_class.Retrieve(instance=request.user)
             return response.Response(status=status.HTTP_200_OK, data=serializer.data)
         
+
+    
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["old_password","new_password"],
+            properties= {
+                'old_password': openapi.Schema(type=openapi.TYPE_STRING),
+                'new_password': openapi.Schema(type=openapi.TYPE_STRING),
+            }
+        ),
+        responses={
+            200: "Password changed successfully",
+            400: "The new password must be different from the old passwords",
+            403: "The old password you provided is incorrect"
+        }
+    )
     @decorators.action(detail=False, methods=["post"])
     def change_password(self, request, *args, **kwargs):
+        """
+        The `change_password` function allows a user to change their password by providing the old
+        password and a new password, with validation checks for password correctness and uniqueness.
+        
+        :param request: The `request` parameter represents the HTTP request object that contains
+        information about the incoming request, such as headers, body, and query parameters
+        :return: a response with a status code of 200 (OK) and a JSON object containing a "message" key
+        with the value "Password changed successfully".
+        """
         old_password = request.data.get("old_password")
         new_password = request.data.get("new_password")
         instance = request.user
         if not check_password(old_password, instance.password):
             raise exceptions.CustomException(
+                status_code=status.HTTP_403_FORBIDDEN,
                 message="The old password you provided is incorrect",
                 errors=["incorrect old password"],
             )
 
         if check_password(new_password, instance.password):
             raise exceptions.CustomException(
+                status_code=status.HTTP_400_BAD_REQUEST,
                 message="The new password must be different from the old passwords",
                 errors=["same password"],
             )
@@ -256,6 +395,22 @@ class AuthViewSet(
             data={"message": "Password changed successfully"},
         )
 
+
+
+    
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["page_base_url"],
+            properties= {
+                'page_base_url': openapi.Schema(type=openapi.TYPE_STRING)
+            }
+        ),
+        responses={
+            200: "A verification mail has been successfully sent to [ request sender email ]",
+            403: "The email address is already verified for the account"
+        }
+    )
     @decorators.action(
         detail=False, 
         methods=["post"],
@@ -263,10 +418,22 @@ class AuthViewSet(
         url_path="request_email_verification"
     )
     def initialize_verify_email(self, request, *args, **kwargs):
+        """
+        The `initialize_verify_email` function sends a verification email to the user's email address if
+        it is not already verified.
+        
+        :param request: The `request` parameter is an object that represents the HTTP request made to
+        the API endpoint. It contains information about the request, such as the request method,
+        headers, body, and user making the request
+        :return: The function `initialize_verify_email` returns an HTTP response with a status code of
+        200 (OK) and a JSON object containing a message indicating that a verification mail has been
+        successfully sent to the email address associated with the user instance.
+        """
         page_base_url = request.data.get("page_base_url")
         instance: models.User = request.user
         if instance.is_verified:
             raise exceptions.CustomException(
+                status_code= status.HTTP_403_FORBIDDEN,
                 message="The email address is already verified for the account",
                 errors=["verified email"],
             )
@@ -282,10 +449,25 @@ class AuthViewSet(
         return response.Response(
             status=status.HTTP_200_OK,
             data={
-                "message": f"An verification mail has been successfully sent to {instance.email}"
+                "message": f"A verification mail has been successfully sent to {instance.email}"
             },
         )
 
+
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["token"],
+            properties= {
+                'token': openapi.Schema(type=openapi.TYPE_STRING)
+            }
+        ),
+        responses={
+            200: "Email verified successfully",
+            403: "You specified an invalid token"
+        }
+    )
     @decorators.action(
         detail=False, 
         methods=["post"],
@@ -293,6 +475,16 @@ class AuthViewSet(
         url_path="verify_email"
     )
     def finalize_verify_email(self, request, *args, **kwargs):
+        """
+        The `finalize_verify_email` function verifies an email using a token and sends a success message
+        if the verification is successful.
+        
+        :param request: The `request` parameter represents the HTTP request object that contains
+        information about the incoming request, such as headers, body, and query parameters
+        :return: The function `finalize_verify_email` returns an HTTP response with a status code of 200
+        (OK) and a JSON object containing a message indicating that the email has been verified
+        successfully.
+        """
         token = request.data.get("token")
         cache_instance = redis.RedisTools(
             helpers.UserAuthHelpers.get_email_verification_token_cache_reference(token),
@@ -300,6 +492,7 @@ class AuthViewSet(
         )
         if not cache_instance.cache_value:
             raise exceptions.CustomException(
+                status_code=status.HTTP_403_FORBIDDEN,
                 message="You specified an invalid token",
                 errors=["expired token"],
             )
@@ -307,7 +500,6 @@ class AuthViewSet(
             id=cache_instance.cache_value.get("owner")
         )
         instance.verify_email()
-        print(instance.is_verified)
         cache_instance.cache_value = None
         message = MessageTemplates.MessageTemplates.email_verification_success()
         instance.send_mail("Email Verification Success", message)
@@ -316,12 +508,39 @@ class AuthViewSet(
             data={"message": f"Email verified successfully"},
         )
         
+        
+        
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["email","page_base_url"],
+            properties= {
+                'email': openapi.Schema(type=openapi.TYPE_STRING),
+                'page_base_url': openapi.Schema(type=openapi.TYPE_STRING)
+            }
+        ),
+        responses={
+            200: "Password reset email has been successfully sent to [ request sender email ]"
+        }
+    )  
     @decorators.action(
         detail=False, 
         methods=["post"],
         url_path="reset-account"
     )
     def initiate_reset_password_email(self, request, *args, **kwargs):
+        """
+        This `initiate_reset_password_email` function sends a password reset email to the specified email
+        address.
+        
+        :param request: The `request` parameter is an object that represents the HTTP request made to
+        the API endpoint. It contains information such as the request method, headers, body, and query
+        parameters
+        :return: The function `initiate_reset_password_email` is returning an HTTP response with a
+        status code of 200 (OK) and a JSON object as the response data. The response data includes a
+        message indicating that the password reset email has been successfully sent to the specified
+        email address.
+        """,
         email = request.data.get("email").lower()
         instance = helpers.commons.Utils.get_object_or_raise_error(UserModel.objects, email=email)
         token = helpers.Token.create_random_hex_token(16)
@@ -344,12 +563,40 @@ class AuthViewSet(
             },
         )
 
+
+
+    @swagger_auto_schema(
+        request_body=openapi.Schema(
+            type=openapi.TYPE_OBJECT,
+            required=["token","password"],
+            properties= {
+                'token': openapi.Schema(type=openapi.TYPE_STRING),
+                'password': openapi.Schema(type=openapi.TYPE_STRING)
+            }
+        ),
+        responses={
+            200: "Password changed successfully",
+            403: "You specified an invalid token"
+        }
+    )  
     @decorators.action(
         detail=False, 
         methods=["post"],
         url_path="reset-password"
     )
     def finalize_reset_password_email(self, request, *args, **kwargs):
+        """
+        The above function is an API endpoint that allows users to finalize the reset password process
+        by providing a token and a new password.
+        
+        :param request: The `request` parameter is the HTTP request object that contains information
+        about the incoming request, such as headers, body, and query parameters. It is used to access
+        the data sent in the request body using `request.data.get("token")` and
+        `request.data.get("password")`
+        :return: The function `finalize_reset_password_email` returns an HTTP response with a status
+        code of 200 (OK) and a JSON object containing a message indicating that the password has been
+        changed successfully.
+        """
         token = request.data.get("token")
         password = request.data.get("password")
         cache_instance = redis.RedisTools(
@@ -358,6 +605,7 @@ class AuthViewSet(
         )
         if not cache_instance.cache_value:
             raise exceptions.CustomException(
+                status_code=status.HTTP_403_FORBIDDEN,
                 message="You specified an invalid token",
                 errors=["expired token"],
             )

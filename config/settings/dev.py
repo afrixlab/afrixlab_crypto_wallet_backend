@@ -47,7 +47,7 @@ SWAGGER_SETTINGS = {
 }
 
 #______________________REDIS____________________________
-REDIS_HOST = env.str("REDIS_HOST", default="localhost")
+REDIS_HOST = env.str("REDIS_HOST", default="redis")
 REDIS_PORT = env.int("REDIS_PORT", default=6379)
 
 # ______________________ Cache _______________________________
@@ -107,3 +107,4 @@ JAZZMIN_SETTINGS = {
 
 # ________________________ WALLET ____________________
 WALLET_PHRASE = env.str("WALLET_PHRASE",default="***")
+
