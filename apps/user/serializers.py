@@ -1,33 +1,17 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import User
+
 
 class BaseUserSerializer(serializers.ModelSerializer):
     class Meta:
-        model = User
-        fields = [
-            "first_name",
-            "last_name",
-            "username",
-            "email",
-            "is_verified",
-        ]
+        model = get_user_model()
+        fields = "__all__"
 
         ref_name = "Base User"
 
 
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = get_user_model()
-        exclude = [
-            "password",
-            "is_superuser",
-            "is_staff",
-            "groups",
-            "user_permissions",
-            "old_passwords",
-        ]
+class UserSerializer(BaseUserSerializer):
     class Update(serializers.ModelSerializer):
         username = serializers.CharField(
             allow_blank=False,

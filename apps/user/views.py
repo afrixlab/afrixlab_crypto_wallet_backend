@@ -1,9 +1,12 @@
 import re
 import orjson
+
 from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.hashers import check_password
 from django.http import QueryDict
+
+from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
 from rest_framework import (
     viewsets,
@@ -38,12 +41,17 @@ UserModel = get_user_model()
 
 
 class AuthViewSet(
-    CountListResponseMixin,
     CustomRequestDataValidationMixin,
+    CountListResponseMixin,
     viewsets.ModelViewSet
 ):
     queryset = UserModel.objects
-    serializer_class = serializers.UserSerializer
+    #serializer_class = serializers.UserSerializer
+    http_method_names = ["post","get"]
+
+    def get_queryset(self):
+        return self.queryset.all()
+
 
     def get_required_fields(self):
         if self.action == "create_user_with_email_and_password":
@@ -75,25 +83,6 @@ class AuthViewSet(
         
         return super().get_permissions()
     
-    @swagger_auto_schema(auto_schema=None)
-    def list(self, request, *args, **kwargs):
-        return super().list(request, *args, **kwargs)
-    
-    @swagger_auto_schema(auto_schema=None)
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
-    
-    @swagger_auto_schema(auto_schema=None)
-    def update(self, request, *args, **kwargs):
-        return super().update(request, *args, **kwargs)
-    
-    @swagger_auto_schema(auto_schema=None)
-    def partial_update(self, request, *args, **kwargs):
-        return super().partial_update(request, *args, **kwargs)
-    
-    @swagger_auto_schema(auto_schema=None)
-    def destroy(self, request, *args, **kwargs):
-        return super().destroy(request, *args, **kwargs)
     
     def password_validator(func):
         def create_user_with_email_and_password(self,request, *args, **kwargs):
@@ -111,6 +100,7 @@ class AuthViewSet(
                     raise exceptions.CustomException(message="Password must contain at least one special character")
             return func( self,request, *args, **kwargs)
         return create_user_with_email_and_password
+    
     
     
     @decorators.action(
