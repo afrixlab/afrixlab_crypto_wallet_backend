@@ -1,12 +1,5 @@
-from django.conf import settings
-from mnemonic import Mnemonic
+import mnemonic
 
 
-class WalletClient:
-    mnemo = Mnemonic("english")
-    
-    def generate_mnemonic_phrase(self):
-        return self.mnemo.generate(strength=256)
-    
-a = WalletClient().generate_mnemonic_phrase()
-print(a)
+# TODO: Create a py solana library
+
