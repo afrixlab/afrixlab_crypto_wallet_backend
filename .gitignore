@@ -106,3 +106,4 @@ venv.bak/
 #Django stuffs
 migrate.sh
 .sqlite3
+dump.rdb
