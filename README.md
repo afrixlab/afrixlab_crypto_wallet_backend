@@ -19,3 +19,5 @@ You should have Knowledge on how Python, Django and Rest Framework works
 
 Please refer to the instructions of [CONTRIBUTING](https://github.com/afrixlab/afrixlab_crypto_wallet_backend/blob/master/CONTRIBUTING.md)
 
+
+## Starting the project
